@@ -1,0 +1,62 @@
+{
+  "version": "2.1",
+  "project_name": "貿易DX",
+  "paths": {
+    "master_dir": "../../master",
+    "work_dir": "../../work",
+    "backup_dir": "../../backup",
+    "log_dir": "../../logs",
+    "scripts_dir": "../"
+  },
+  "users": [
+    {
+      "name": "山田",
+      "email": "yamada@example.com",
+      "file_prefix": "yamada"
+    },
+    {
+      "name": "鈴木",
+      "email": "suzuki@example.com",
+      "file_prefix": "suzuki"
+    }
+  ],
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "date_format": "%Y-%m-%d %H:%M:%S",
+    "max_bytes": 10485760,
+    "backup_count": 5
+  },
+  "file_settings": {
+    "master_file_name": "案件管理台帳_マスター.xlsm",
+    "sheet_name": "案件一覧",
+    "encoding": "utf-8",
+    "file_lock_retry": 3,
+    "file_lock_wait": 60
+  },
+  "sync_settings": {
+    "incremental_interval_minutes": 30,
+    "full_sync_time": "17:30",
+    "distribute_time": "08:30"
+  },
+  "backup_settings": {
+    "retention_days": 30,
+    "compression": true
+  },
+  "case_number_server": {
+    "host": "localhost",
+    "port": 8080,
+    "timeout": 5,
+    "fallback_to_local": true
+  },
+  "email_settings": {
+    "smtp_server": "smtp.example.com",
+    "smtp_port": 587,
+    "use_tls": true,
+    "from_address": "tradedx@example.com",
+    "alert_recipients": [
+      "admin@example.com"
+    ]
+  }
+}
+
