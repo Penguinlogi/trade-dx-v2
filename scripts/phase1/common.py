@@ -183,7 +183,9 @@ def get_file_path(
     if file_type not in valid_types:
         raise ValueError(f"無効なfile_typeです: {file_type}. 有効な値: {valid_types}")
     
-    base_dir = Path(paths.get(f'{file_type}_dir', f'../../{file_type}'))
+    # プロジェクトルートを取得（このファイルの2階層上）
+    project_root = Path(__file__).parent.parent.parent
+    base_dir = project_root / paths.get(f'{file_type}_dir', file_type)
     
     # カスタム名が指定されている場合はそれを使用
     if custom_name:

@@ -2,11 +2,11 @@
   "version": "2.1",
   "project_name": "貿易DX",
   "paths": {
-    "master_dir": "../../master",
-    "work_dir": "../../work",
-    "backup_dir": "../../backup",
-    "log_dir": "../../logs",
-    "scripts_dir": "../"
+    "master_dir": "master",
+    "work_dir": "work",
+    "backup_dir": "backup",
+    "log_dir": "logs",
+    "scripts_dir": "scripts"
   },
   "users": [
     {
@@ -18,6 +18,11 @@
       "name": "鈴木",
       "email": "suzuki@example.com",
       "file_prefix": "suzuki"
+    },
+    {
+      "name": "佐藤",
+      "email": "satou@example.com",
+      "file_prefix": "satou"
     }
   ],
   "logging": {
@@ -28,7 +33,7 @@
     "backup_count": 5
   },
   "file_settings": {
-    "master_file_name": "案件管理台帳_マスター.xlsm",
+    "master_file_name": "案件管理台帳_マスター.xlsx",
     "sheet_name": "案件一覧",
     "encoding": "utf-8",
     "file_lock_retry": 3,

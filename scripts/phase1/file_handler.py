@@ -271,7 +271,9 @@ def create_backup_file(
         if backup_dir is None:
             # デフォルトのバックアップディレクトリ
             config = load_config()
-            backup_dir = Path(config['paths']['backup_dir'])
+            # プロジェクトルートを取得（このファイルの2階層上）
+            project_root = Path(__file__).parent.parent.parent
+            backup_dir = project_root / config['paths']['backup_dir']
         else:
             backup_dir = Path(backup_dir)
         
