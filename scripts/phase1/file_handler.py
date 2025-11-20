@@ -269,10 +269,11 @@ def create_backup_file(
     try:
         # バックアップディレクトリの決定
         if backup_dir is None:
-            # デフォルトのバックアップディレクトリ
-            config = load_config()
             # プロジェクトルートを取得（このファイルの2階層上）
             project_root = Path(__file__).parent.parent.parent
+            # config.jsonのパス
+            config_path = Path(__file__).parent / 'config.json'
+            config = load_config(str(config_path))
             backup_dir = project_root / config['paths']['backup_dir']
         else:
             backup_dir = Path(backup_dir)
