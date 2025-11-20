@@ -1,0 +1,62 @@
+{
+  "EX": {
+    "counter": 3,
+    "last_generated": "2025-11-19T14:14:39.902781"
+  },
+  "IM": {
+    "counter": 1,
+    "last_generated": "2025-11-19T14:14:03.918822"
+  },
+  "TR": {
+    "counter": 1,
+    "last_generated": "2025-11-19T14:14:14.156600"
+  },
+  "DO": {
+    "counter": 1,
+    "last_generated": "2025-11-19T14:14:24.838282"
+  },
+  "history": [
+    {
+      "case_number": "EX-250001",
+      "case_type": "EX",
+      "user": "山田",
+      "timestamp": "2025-11-19T14:13:54.730132",
+      "counter": 1
+    },
+    {
+      "case_number": "IM-250001",
+      "case_type": "IM",
+      "user": "鈴木",
+      "timestamp": "2025-11-19T14:14:03.918822",
+      "counter": 1
+    },
+    {
+      "case_number": "TR-250001",
+      "case_type": "TR",
+      "user": "田中",
+      "timestamp": "2025-11-19T14:14:14.156600",
+      "counter": 1
+    },
+    {
+      "case_number": "DO-250001",
+      "case_type": "DO",
+      "user": "佐藤",
+      "timestamp": "2025-11-19T14:14:24.838282",
+      "counter": 1
+    },
+    {
+      "case_number": "EX-250002",
+      "case_type": "EX",
+      "user": "test",
+      "timestamp": "2025-11-19T14:14:36.143085",
+      "counter": 2
+    },
+    {
+      "case_number": "EX-250003",
+      "case_type": "EX",
+      "user": "test",
+      "timestamp": "2025-11-19T14:14:39.902781",
+      "counter": 3
+    }
+  ]
+}
