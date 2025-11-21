@@ -1,0 +1,51 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env
+venv
+*.egg-info
+dist
+build
+
+# Node
+node_modules
+npm-debug.log
+
+# IDEs
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 環境変数
+.env
+.env.local
+
+# データベース
+*.db
+*.sqlite
+
+# ログ
+*.log
+
+# ドキュメント
+docs
+*.md
+!README.md
+
+# テスト
+.pytest_cache
+coverage
+.coverage
+

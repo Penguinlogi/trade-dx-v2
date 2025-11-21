@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # PostgreSQLデータベース
+  db:
+    image: postgres:15-alpine
+    container_name: trade_dx_db
+    environment:
+      POSTGRES_DB: trade_dx
+      POSTGRES_USER: trade_user
+      POSTGRES_PASSWORD: trade_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trade_user -d trade_dx"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPIバックエンド
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: trade_dx_backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://trade_user:trade_password@db:5432/trade_dx
+      SECRET_KEY: your-secret-key-change-in-production
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # React フロントエンド
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: trade_dx_frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    command: npm run dev -- --host 0.0.0.0
+
+volumes:
+  postgres_data:
+
