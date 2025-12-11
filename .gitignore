@@ -31,6 +31,10 @@ yarn-error.log*
 dist/
 dist-ssr/
 
+# テスト出力（Playwright等）
+playwright-report/
+test-results/
+
 # 環境変数
 .env
 .env.local
@@ -64,6 +68,9 @@ docker-compose.override.yml
 .coverage
 htmlcov/
 coverage/
+
+# 生成物（残さなくてよい出力）
+backend/generated_documents/
 
 # ドキュメント（プロジェクト管理ファイルは除外しない）
 # docs/
