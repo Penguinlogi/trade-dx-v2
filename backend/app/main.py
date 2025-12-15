@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
 from .core.database import engine, Base
+from .api.endpoints import auth, cases, case_numbers, customers, products, analytics, documents, change_history, backups, websocket
 
 # データベーステーブルの作成
 Base.metadata.create_all(bind=engine)
@@ -24,6 +25,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# APIルーターの登録
+app.include_router(auth.router, prefix="/api/auth", tags=["認証"])
+app.include_router(cases.router, prefix="/api/cases", tags=["案件管理"])
+app.include_router(case_numbers.router, prefix="/api/case-numbers", tags=["案件番号"])
+app.include_router(customers.router, prefix="/api/customers", tags=["顧客マスタ"])
+app.include_router(products.router, prefix="/api/products", tags=["商品マスタ"])
+app.include_router(analytics.router, prefix="/api/analytics", tags=["分析・集計"])
+app.include_router(documents.router, prefix="/api/documents", tags=["ドキュメント生成"])
+app.include_router(change_history.router, prefix="/api/change-history", tags=["変更履歴"])
+app.include_router(backups.router, prefix="/api/backups", tags=["バックアップ"])
+app.include_router(websocket.router, prefix="/api", tags=["WebSocket"])
 
 
 @app.get("/")
@@ -58,4 +71,3 @@ if __name__ == "__main__":
         port=settings.PORT,
         reload=settings.DEBUG
     )
-
