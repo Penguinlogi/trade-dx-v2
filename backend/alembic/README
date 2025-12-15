@@ -1,0 +1,40 @@
+Generic single-database configuration.
+
+## マイグレーションコマンド
+
+### 新しいマイグレーションファイルを作成
+```bash
+alembic revision --autogenerate -m "マイグレーションのメッセージ"
+```
+
+### マイグレーションを実行
+```bash
+alembic upgrade head
+```
+
+### マイグレーションをロールバック
+```bash
+alembic downgrade -1
+```
+
+### 現在のリビジョンを確認
+```bash
+alembic current
+```
+
+### マイグレーション履歴を表示
+```bash
+alembic history
+```
+
+
+
+
+
+
+
+
+
+
+
+
