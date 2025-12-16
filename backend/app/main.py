@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
 from .core.database import engine, Base
 from .api.endpoints import auth, cases, case_numbers, customers, products, analytics, documents, change_history, backups, websocket
-from scripts.seed_data import init_db
+from scripts.seed_data import main as init_db
 
 # データベーステーブルの作成
 Base.metadata.create_all(bind=engine)
