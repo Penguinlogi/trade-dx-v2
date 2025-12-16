@@ -154,16 +154,27 @@ class AnalyticsService:
         start_date = date(today.year, today.month, 1) - timedelta(days=(period_months - 1) * 31)
         start_date = date(start_date.year, start_date.month, 1)
 
+        # データベースの種類に応じて適切な関数を使用
+        # PostgreSQL: to_char, SQLite: strftime
+        db_dialect = self.db.bind.dialect.name if hasattr(self.db.bind, 'dialect') else 'sqlite'
+
+        if db_dialect == 'postgresql':
+            # PostgreSQL用: to_char関数を使用
+            year_month_expr = func.to_char(Case.created_at, 'YYYY-MM')
+        else:
+            # SQLite用: strftime関数を使用
+            year_month_expr = func.strftime('%Y-%m', Case.created_at)
+
         # 月次集計
         monthly_data = (
             self.db.query(
-                func.strftime('%Y-%m', Case.created_at).label('year_month'),
+                year_month_expr.label('year_month'),
                 func.count(Case.id).label('case_count'),
                 func.coalesce(func.sum(Case.sales_amount), 0).label('revenue')
             )
             .filter(Case.created_at >= start_date)
-            .group_by(func.strftime('%Y-%m', Case.created_at))
-            .order_by(func.strftime('%Y-%m', Case.created_at))
+            .group_by(year_month_expr)
+            .order_by(year_month_expr)
             .all()
         )
 
@@ -214,8 +225,3 @@ class AnalyticsService:
             "top_customers": top_customers,
             "limit": limit,
         }
-
-
-
-
-
