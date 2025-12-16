@@ -42,6 +42,40 @@ import type {
   CustomerRevenueResponse,
 } from '../types/analytics';
 
+/**
+ * エラーメッセージを取得するヘルパー関数
+ */
+const getErrorMessage = (err: any): string => {
+  if (err.response?.data?.detail) {
+    return err.response.data.detail;
+  }
+  if (err.response?.status) {
+    if (err.response.status === 401) {
+      return '認証エラー: 再度ログインしてください';
+    }
+    if (err.response.status === 403) {
+      return '権限エラー: アクセス権限がありません';
+    }
+    if (err.response.status === 404) {
+      return 'エンドポイントが見つかりません';
+    }
+    if (err.response.status >= 500) {
+      return `サーバーエラー (${err.response.status}): しばらく待ってから再度お試しください`;
+    }
+    return `HTTPエラー (${err.response.status})`;
+  }
+  if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+    return 'タイムアウト: サーバーの応答が遅い可能性があります';
+  }
+  if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
+    return 'ネットワークエラー: サーバーに接続できません';
+  }
+  if (err.message) {
+    return err.message;
+  }
+  return '不明なエラーが発生しました';
+};
+
 export const DashboardPage: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -66,18 +100,52 @@ export const DashboardPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const [summary, trends, customers] = await Promise.all([
-        getAnalyticsSummary(),
-        getAnalyticsTrends(periodMonths),
-        getAnalyticsByCustomer(topCustomersLimit),
+      // 各API呼び出しを個別に処理して、エラーの詳細を把握できるようにする
+      const results = await Promise.allSettled([
+        getAnalyticsSummary().catch(err => ({ error: 'summary', err })),
+        getAnalyticsTrends(periodMonths).catch(err => ({ error: 'trends', err })),
+        getAnalyticsByCustomer(topCustomersLimit).catch(err => ({ error: 'customers', err })),
       ]);
 
-      setSummaryData(summary);
-      setTrendsData(trends);
-      setCustomersData(customers);
+      const errors: string[] = [];
+
+      // サマリーデータの処理
+      if (results[0].status === 'fulfilled' && !('error' in results[0].value)) {
+        setSummaryData(results[0].value);
+      } else {
+        const errorData = results[0].status === 'fulfilled' ? results[0].value : results[0].reason;
+        const err = 'error' in errorData ? errorData.err : errorData;
+        console.error('サマリーデータ取得エラー:', err);
+        errors.push(`サマリー: ${getErrorMessage(err)}`);
+      }
+
+      // トレンドデータの処理
+      if (results[1].status === 'fulfilled' && !('error' in results[1].value)) {
+        setTrendsData(results[1].value);
+      } else {
+        const errorData = results[1].status === 'fulfilled' ? results[1].value : results[1].reason;
+        const err = 'error' in errorData ? errorData.err : errorData;
+        console.error('トレンドデータ取得エラー:', err);
+        errors.push(`トレンド: ${getErrorMessage(err)}`);
+      }
+
+      // 顧客データの処理
+      if (results[2].status === 'fulfilled' && !('error' in results[2].value)) {
+        setCustomersData(results[2].value);
+      } else {
+        const errorData = results[2].status === 'fulfilled' ? results[2].value : results[2].reason;
+        const err = 'error' in errorData ? errorData.err : errorData;
+        console.error('顧客データ取得エラー:', err);
+        errors.push(`顧客別売上: ${getErrorMessage(err)}`);
+      }
+
+      // エラーがある場合は表示
+      if (errors.length > 0) {
+        setError(`データの取得に失敗しました: ${errors.join(', ')}`);
+      }
     } catch (err: any) {
       console.error('データ取得エラー:', err);
-      setError(err.response?.data?.detail || 'データの取得に失敗しました');
+      setError(`データの取得に失敗しました: ${getErrorMessage(err)}`);
     } finally {
       setLoading(false);
     }
@@ -94,6 +162,7 @@ export const DashboardPage: React.FC = () => {
       setTrendsData(trends);
     } catch (err: any) {
       console.error('トレンドデータ取得エラー:', err);
+      setError(`トレンドデータの取得に失敗しました: ${getErrorMessage(err)}`);
     } finally {
       setTrendsLoading(false);
       // スクロール位置を復元
@@ -114,6 +183,7 @@ export const DashboardPage: React.FC = () => {
       setCustomersData(customers);
     } catch (err: any) {
       console.error('顧客データ取得エラー:', err);
+      setError(`顧客別売上データの取得に失敗しました: ${getErrorMessage(err)}`);
     } finally {
       setCustomersLoading(false);
       // スクロール位置を復元
@@ -129,18 +199,52 @@ export const DashboardPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const [summary, trends, customers] = await Promise.all([
-        getAnalyticsSummary(),
-        getAnalyticsTrends(periodMonths),
-        getAnalyticsByCustomer(topCustomersLimit),
+      // 各API呼び出しを個別に処理して、エラーの詳細を把握できるようにする
+      const results = await Promise.allSettled([
+        getAnalyticsSummary().catch(err => ({ error: 'summary', err })),
+        getAnalyticsTrends(periodMonths).catch(err => ({ error: 'trends', err })),
+        getAnalyticsByCustomer(topCustomersLimit).catch(err => ({ error: 'customers', err })),
       ]);
 
-      setSummaryData(summary);
-      setTrendsData(trends);
-      setCustomersData(customers);
+      const errors: string[] = [];
+
+      // サマリーデータの処理
+      if (results[0].status === 'fulfilled' && !('error' in results[0].value)) {
+        setSummaryData(results[0].value);
+      } else {
+        const errorData = results[0].status === 'fulfilled' ? results[0].value : results[0].reason;
+        const err = 'error' in errorData ? errorData.err : errorData;
+        console.error('サマリーデータ取得エラー:', err);
+        errors.push(`サマリー: ${getErrorMessage(err)}`);
+      }
+
+      // トレンドデータの処理
+      if (results[1].status === 'fulfilled' && !('error' in results[1].value)) {
+        setTrendsData(results[1].value);
+      } else {
+        const errorData = results[1].status === 'fulfilled' ? results[1].value : results[1].reason;
+        const err = 'error' in errorData ? errorData.err : errorData;
+        console.error('トレンドデータ取得エラー:', err);
+        errors.push(`トレンド: ${getErrorMessage(err)}`);
+      }
+
+      // 顧客データの処理
+      if (results[2].status === 'fulfilled' && !('error' in results[2].value)) {
+        setCustomersData(results[2].value);
+      } else {
+        const errorData = results[2].status === 'fulfilled' ? results[2].value : results[2].reason;
+        const err = 'error' in errorData ? errorData.err : errorData;
+        console.error('顧客データ取得エラー:', err);
+        errors.push(`顧客別売上: ${getErrorMessage(err)}`);
+      }
+
+      // エラーがある場合は表示
+      if (errors.length > 0) {
+        setError(`データの取得に失敗しました: ${errors.join(', ')}`);
+      }
     } catch (err: any) {
       console.error('データ取得エラー:', err);
-      setError(err.response?.data?.detail || 'データの取得に失敗しました');
+      setError(`データの取得に失敗しました: ${getErrorMessage(err)}`);
     } finally {
       setLoading(false);
     }

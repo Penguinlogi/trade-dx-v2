@@ -12,6 +12,7 @@ const axiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30000, // 30秒のタイムアウト（Render無料プランのスリープからの復帰を考慮）
 });
 
 // リクエストインターセプター（トークンの自動付与）
@@ -51,5 +52,3 @@ axiosInstance.interceptors.response.use(
 );
 
 export { axiosInstance };
-
-
