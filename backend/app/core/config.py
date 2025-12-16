@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     # CORS設定
-    CORS_ORIGINS: List[str] = [
+    CORS_ORIGINS: List str = [
         "http://localhost:3000",
         "http://localhost:3000",
     ]
@@ -38,6 +38,12 @@ class Settings(BaseSettings):
         env_file = ".env"
         case_sensitive = True
 
+@property
+def cors_origins_list(self) -> List[str]:
+    """CORS_ORIGINSをリストに変換"""
+    if self.CORS_ORIGINS == "*":
+        return ["*"]
+    return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
 
 # グローバル設定インスタンス
 settings = Settings()
