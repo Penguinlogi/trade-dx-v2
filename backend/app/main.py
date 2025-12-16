@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
 from .core.database import engine, Base
 from .api.endpoints import auth, cases, case_numbers, customers, products, analytics, documents, change_history, backups, websocket
+from scripts.seed_data import init_db
 
 # データベーステーブルの作成
 Base.metadata.create_all(bind=engine)
@@ -38,6 +39,11 @@ app.include_router(change_history.router, prefix="/api/change-history", tags=["�
 app.include_router(backups.router, prefix="/api/backups", tags=["バックアップ"])
 app.include_router(websocket.router, prefix="/api", tags=["WebSocket"])
 
+@app.on_event("startup")
+async def startup_event():
+    """アプリ起動時の処理"""
+    # データベース初期化
+    init_db()
 
 @app.get("/")
 async def root():
@@ -61,14 +67,6 @@ async def health_check():
         "app_name": settings.APP_NAME,
         "version": settings.APP_VERSION
     }
-
-from .scripts.seed_data import init_db
-
-@app.on_event("startup")
-async def startup_event():
-    """アプリ起動時の処理"""
-    # データベース初期化
-    init_db()
     
 if __name__ == "__main__":
     import uvicorn
