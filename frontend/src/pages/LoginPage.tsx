@@ -41,11 +41,10 @@ export const LoginPage: React.FC = () => {
 
     try {
       await login({ username, password });
-      // ログイン成功後、少し待ってからナビゲーション（状態更新を確実にするため）
-      setTimeout(() => {
-        navigate(from, { replace: true });
-      }, 100);
+      // ログイン成功後、ナビゲーション
+      navigate(from, { replace: true });
     } catch (err: any) {
+      console.error('ログインエラー:', err);
       setError(err.message || 'ログインに失敗しました');
       setIsLoading(false);
     }

@@ -38,7 +38,13 @@ axiosInstance.interceptors.response.use(
     const originalRequest = error.config;
 
     // 401エラー（未認証）の場合
+    // ただし、ログインAPIのエラーは通常のエラーとして処理（リダイレクトしない）
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // ログインAPIのエラーの場合は、リダイレクトせずにエラーをそのまま返す
+      if (originalRequest.url?.includes('/api/auth/login')) {
+        return Promise.reject(error);
+      }
+
       originalRequest._retry = true;
 
       // トークンをクリアしてログインページへリダイレクト
