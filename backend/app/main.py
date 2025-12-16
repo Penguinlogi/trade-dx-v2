@@ -62,7 +62,14 @@ async def health_check():
         "version": settings.APP_VERSION
     }
 
+from .scripts.seed_data import init_db
 
+@app.on_event("startup")
+async def startup_event():
+    """アプリ起動時の処理"""
+    # データベース初期化
+    init_db()
+    
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
@@ -71,3 +78,4 @@ if __name__ == "__main__":
         port=settings.PORT,
         reload=settings.DEBUG
     )
+
