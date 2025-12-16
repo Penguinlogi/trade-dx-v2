@@ -55,9 +55,14 @@ async def get_current_user(
     if payload is None:
         raise credentials_exception
 
-    # ユーザーIDを取得
-    user_id: Optional[int] = payload.get("sub")
-    if user_id is None:
+    # ユーザーIDを取得（JWTのsubは文字列として保存されている可能性があるため、intに変換）
+    user_id_str = payload.get("sub")
+    if user_id_str is None:
+        raise credentials_exception
+
+    try:
+        user_id = int(user_id_str)
+    except (ValueError, TypeError):
         raise credentials_exception
 
     # ユーザーを取得
@@ -112,9 +117,3 @@ async def get_current_superuser(
             detail="この操作を実行する権限がありません"
         )
     return current_user
-
-
-
-
-
-

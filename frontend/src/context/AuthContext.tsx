@@ -36,15 +36,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (token && storedUser) {
         try {
           // 保存されたユーザー情報を復元
-          setUser(JSON.parse(storedUser));
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
 
           // サーバーから最新のユーザー情報を取得
           const currentUser = await authApi.getCurrentUser();
           setUser(currentUser);
           localStorage.setItem('user', JSON.stringify(currentUser));
-        } catch (error) {
+        } catch (error: any) {
           // トークンが無効な場合はクリア
           console.error('認証エラー:', error);
+          console.error('認証エラー詳細:', {
+            message: error.message,
+            response: error.response?.data,
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+          });
           localStorage.removeItem('access_token');
           localStorage.removeItem('user');
           setUser(null);
