@@ -1,7 +1,7 @@
 """
 案件モデル
 """
-from sqlalchemy import Column, Integer, String, Numeric, Date, DateTime, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Numeric, Date, DateTime, Text, ForeignKey, text
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from ..core.database import Base
@@ -49,8 +49,8 @@ class Case(Base):
     # 作成・更新情報
     created_by = Column(Integer, ForeignKey("users.id"), nullable=True, comment="作成者ID")
     updated_by = Column(Integer, ForeignKey("users.id"), nullable=True, comment="更新者ID")
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=text("CURRENT_TIMESTAMP"), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=text("CURRENT_TIMESTAMP"), onupdate=func.now(), nullable=False)
 
     # リレーション
     customer = relationship("Customer", back_populates="cases")
