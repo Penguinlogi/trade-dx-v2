@@ -465,10 +465,10 @@ async def delete_case(
     # 既に削除履歴が存在するかチェック（重複記録を防ぐ）
     from ...models.change_history import ChangeHistory as ChangeHistoryModel
     import logging
-    
+
     # 削除対象案件の情報をログに記録（デバッグ用）
     logging.info(f"案件削除処理開始: case_id={case.id}, case_number={case.case_number}")
-    
+
     existing_delete_history = db.query(ChangeHistoryModel).filter(
         ChangeHistoryModel.case_id == case.id,
         ChangeHistoryModel.change_type == "DELETE"
