@@ -180,8 +180,11 @@ export const CasesPage: React.FC = () => {
     
     // YYYY/MM/DD形式からYYYY-MM-DDに変換
     const dateMatch = value.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
-    if (dateMatch) {
-      const [, year, month, day] = dateMatch;
+    if (dateMatch && dateMatch[1] && dateMatch[2] && dateMatch[3]) {
+      const year = dateMatch[1];
+      const month = dateMatch[2];
+      const day = dateMatch[3];
+      
       // 年が4桁でない場合は無効（6桁の年などを防ぐ）
       if (year.length !== 4) return '';
       
