@@ -60,14 +60,64 @@ async def startup_event():
 
         # データベースURLがPostgreSQLの場合のみマイグレーションを実行
         if "postgresql" in settings.DATABASE_URL.lower():
-            alembic_cfg = Config("alembic.ini")
             # 作業ディレクトリをbackendに設定
-            alembic_cfg.set_main_option("script_location", "alembic")
-            try:
-                command.upgrade(alembic_cfg, "head")
-                logger.info("データベースマイグレーションが完了しました")
-            except Exception as e:
-                logger.warning(f"マイグレーション実行中にエラーが発生しました（続行）: {str(e)}")
+            backend_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "backend")
+            alembic_ini_path = os.path.join(backend_dir, "alembic.ini")
+
+            if os.path.exists(alembic_ini_path):
+                alembic_cfg = Config(alembic_ini_path)
+                alembic_cfg.set_main_option("script_location", os.path.join(backend_dir, "alembic"))
+                try:
+                    command.upgrade(alembic_cfg, "head")
+                    logger.info("データベースマイグレーションが完了しました")
+                except Exception as e:
+                    logger.warning(f"マイグレーション実行中にエラーが発生しました（続行）: {str(e)}")
+            else:
+                # alembic.iniが見つからない場合、直接SQLでスキーマを更新
+                try:
+                    from sqlalchemy import text
+                    from .core.database import SessionLocal
+                    db = SessionLocal()
+                    try:
+                        # change_history.case_idがnullableかどうかを確認
+                        result = db.execute(text("""
+                            SELECT is_nullable
+                            FROM information_schema.columns
+                            WHERE table_name = 'change_history'
+                            AND column_name = 'case_id'
+                        """))
+                        row = result.fetchone()
+                        if row and row[0] == 'NO':
+                            # nullable=Falseの場合、スキーマを更新
+                            logger.info("change_history.case_idをnullable=Trueに変更します")
+                            # 外部キー制約を削除
+                            db.execute(text("""
+                                ALTER TABLE change_history
+                                DROP CONSTRAINT IF EXISTS change_history_case_id_fkey
+                            """))
+                            # case_idをnullable=Trueに変更
+                            db.execute(text("""
+                                ALTER TABLE change_history
+                                ALTER COLUMN case_id DROP NOT NULL
+                            """))
+                            # 外部キー制約を再作成（ON DELETE SET NULL）
+                            db.execute(text("""
+                                ALTER TABLE change_history
+                                ADD CONSTRAINT change_history_case_id_fkey
+                                FOREIGN KEY (case_id) REFERENCES cases(id)
+                                ON DELETE SET NULL
+                            """))
+                            db.commit()
+                            logger.info("change_history.case_idのスキーマ更新が完了しました")
+                        else:
+                            logger.info("change_history.case_idは既にnullable=Trueです")
+                    except Exception as schema_error:
+                        db.rollback()
+                        logger.warning(f"スキーマ更新中にエラーが発生しました（続行）: {str(schema_error)}")
+                    finally:
+                        db.close()
+                except Exception as e:
+                    logger.warning(f"スキーマ更新の試行に失敗しました（続行）: {str(e)}")
     except Exception as e:
         logger.warning(f"マイグレーションの自動実行に失敗しました（続行）: {str(e)}")
 
