@@ -12,10 +12,9 @@ class ChangeHistory(Base):
     __tablename__ = "change_history"
 
     id = Column(Integer, primary_key=True, index=True)
-    # 案件削除後も履歴を残すため、外部キー制約は通常通り設定
-    # SQLiteでは外部キー制約がデフォルトで無効のため、案件削除時もcase_idは保持される
-    # 既存のDBでcase_idがnullable=Falseの場合でも動作する
-    case_id = Column(Integer, ForeignKey("cases.id"), nullable=False, index=True, comment="案件ID")
+    # 案件削除後も履歴を残すため、外部キー制約はON DELETE SET NULLを設定
+    # PostgreSQLでは外部キー制約が有効のため、案件削除時にcase_idをNULLにする必要がある
+    case_id = Column(Integer, ForeignKey("cases.id", ondelete="SET NULL"), nullable=True, index=True, comment="案件ID")
 
     # 変更情報
     changed_by = Column(Integer, ForeignKey("users.id"), nullable=True, comment="変更者ID")
