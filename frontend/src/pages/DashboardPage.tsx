@@ -303,7 +303,7 @@ export const DashboardPage: React.FC = () => {
           <Typography variant="body2" sx={{ mx: 2 }}>
             {user?.full_name || user?.username}
           </Typography>
-          <ServerStatusIndicator compact />
+          <ServerStatusIndicator />
           <IconButton color="inherit" onClick={handleLogout} title="ログアウト">
             <Logout />
           </IconButton>
