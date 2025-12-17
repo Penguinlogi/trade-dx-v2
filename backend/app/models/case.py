@@ -1,8 +1,8 @@
 """
 案件モデル
 """
-from sqlalchemy import Column, Integer, String, Numeric, Date, DateTime, Text, ForeignKey, text
-from sqlalchemy.sql import func
+from sqlalchemy import Column, Integer, String, Numeric, Date, DateTime, Text, ForeignKey
+from sqlalchemy.sql import func, text
 from sqlalchemy.orm import relationship
 from ..core.database import Base
 
