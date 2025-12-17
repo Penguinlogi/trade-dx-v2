@@ -228,9 +228,56 @@ async def create_case(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="指定された案件番号は既に使用されています"
             )
+    else:
+        # 案件番号が指定されていない場合、自動生成
+        from ...models.case_number import CaseNumber
+        from datetime import datetime
+        from sqlalchemy import and_
+        
+        current_year = datetime.now().year
+        trade_type_code = "EX" if case_in.trade_type == "輸出" else "IM"
+        
+        # 該当年・区分の案件番号管理レコードを取得（ロック）
+        case_number_record = db.query(CaseNumber).filter(
+            and_(
+                CaseNumber.year == current_year,
+                CaseNumber.trade_type == case_in.trade_type
+            )
+        ).with_for_update().first()
+        
+        if case_number_record:
+            # レコードが存在する場合、連番をインクリメント
+            case_number_record.last_sequence += 1
+            sequence = case_number_record.last_sequence
+        else:
+            # レコードが存在しない場合、新規作成
+            sequence = 1
+            case_number_record = CaseNumber(
+                year=current_year,
+                trade_type=case_in.trade_type,
+                trade_type_code=trade_type_code,
+                last_sequence=sequence
+            )
+            db.add(case_number_record)
+        
+        # 連番が999を超えた場合はエラー
+        if sequence > 999:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"{current_year}年の{case_in.trade_type}案件番号の連番が上限(999)に達しました"
+            )
+        
+        # 案件番号を生成
+        case_number = CaseNumber.generate_case_number(current_year, case_in.trade_type, sequence)
+        
+        # 案件データを取得して案件番号を設定
+        case_data = case_in.model_dump()
+        case_data['case_number'] = case_number
+    else:
+        # 案件番号が指定されている場合
+        case_data = case_in.model_dump()
 
     # 案件を作成
-    case_data = case_in.model_dump()
     case = CaseModel(**case_data)
     case.created_by = current_user.id
     case.updated_by = current_user.id
