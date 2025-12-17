@@ -171,33 +171,33 @@ export const CasesPage: React.FC = () => {
    */
   const normalizeDateValue = (value: string): string => {
     if (!value || typeof value !== 'string') return '';
-    
+
     // 既に正確なYYYY-MM-DD形式（10文字）の場合はそのまま返す
     const validDateFormat = /^\d{4}-\d{2}-\d{2}$/;
     if (validDateFormat.test(value.trim())) {
       return value.trim().substring(0, 10);
     }
-    
+
     // YYYY/MM/DD形式からYYYY-MM-DDに変換
     const dateMatch = value.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
     if (dateMatch && dateMatch[1] && dateMatch[2] && dateMatch[3]) {
       const year = dateMatch[1];
       const month = dateMatch[2];
       const day = dateMatch[3];
-      
+
       // 年が4桁でない場合は無効（6桁の年などを防ぐ）
       if (year.length !== 4) return '';
-      
+
       const yearNum = parseInt(year, 10);
       const monthNum = parseInt(month, 10);
       const dayNum = parseInt(day, 10);
-      
+
       // 有効な日付範囲かチェック
       if (isNaN(yearNum) || isNaN(monthNum) || isNaN(dayNum)) return '';
       if (yearNum < 1900 || yearNum > 2100) return '';
       if (monthNum < 1 || monthNum > 12) return '';
       if (dayNum < 1 || dayNum > 31) return '';
-      
+
       // Dateオブジェクトで有効性を確認
       const date = new Date(yearNum, monthNum - 1, dayNum);
       if (
@@ -208,7 +208,7 @@ export const CasesPage: React.FC = () => {
         return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
       }
     }
-    
+
     // 無効な形式の場合は空文字列を返す
     return '';
   };

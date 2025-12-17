@@ -31,7 +31,7 @@ app = FastAPI(
 # CORSミドルウェアの設定
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list, 
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -52,6 +52,25 @@ app.include_router(websocket.router, prefix="/api", tags=["WebSocket"])
 @app.on_event("startup")
 async def startup_event():
     """アプリ起動時の処理"""
+    # マイグレーションを自動実行（PostgreSQL用）
+    try:
+        from alembic.config import Config
+        from alembic import command
+        import os
+
+        # データベースURLがPostgreSQLの場合のみマイグレーションを実行
+        if "postgresql" in settings.DATABASE_URL.lower():
+            alembic_cfg = Config("alembic.ini")
+            # 作業ディレクトリをbackendに設定
+            alembic_cfg.set_main_option("script_location", "alembic")
+            try:
+                command.upgrade(alembic_cfg, "head")
+                logger.info("データベースマイグレーションが完了しました")
+            except Exception as e:
+                logger.warning(f"マイグレーション実行中にエラーが発生しました（続行）: {str(e)}")
+    except Exception as e:
+        logger.warning(f"マイグレーションの自動実行に失敗しました（続行）: {str(e)}")
+
     # データベース初期化
     init_db()
 
@@ -88,7 +107,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"detail": "内部サーバーエラーが発生しました"}
     )
-    
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
@@ -97,4 +116,3 @@ if __name__ == "__main__":
         port=settings.PORT,
         reload=settings.DEBUG
     )
-

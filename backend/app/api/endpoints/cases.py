@@ -516,18 +516,46 @@ async def delete_case(
         ).count()
         logging.info(f"関連するドキュメント数: {document_count}")
 
-        # PostgreSQL用: 削除前にchange_historyのcase_idをNULLに設定（外部キー制約エラーを回避）
-        # これにより、案件削除後も変更履歴が残る
-        db.query(ChangeHistoryModel).filter(
-            ChangeHistoryModel.case_id == case.id
-        ).update({ChangeHistoryModel.case_id: None})
-        
+        # PostgreSQL用: 外部キー制約エラーを回避するため、削除処理を調整
+        # change_historyのcase_idがnullable=Falseの場合、NULLに設定できないため、
+        # 直接削除を試みる（エラーが発生した場合は適切に処理）
+
         # 案件を削除（リレーションシップは自動的に処理される）
         # documentsはcascade="all, delete-orphan"で自動削除される
-        # change_historiesのcase_idは既にNULLに設定済み
-        db.delete(case)
-        db.commit()
-        logging.info(f"案件削除成功: case_id={case.id}, 削除履歴は既に記録済み")
+        # change_historiesは外部キー制約により削除できない可能性がある
+        try:
+            db.delete(case)
+            db.commit()
+            logging.info(f"案件削除成功: case_id={case.id}, 削除履歴は既に記録済み")
+        except Exception as delete_error:
+            # 外部キー制約エラーの場合、change_historyのcase_idをNULLに設定して再試行
+            error_str = str(delete_error)
+            if "foreign key" in error_str.lower() or "FOREIGN KEY" in error_str:
+                db.rollback()
+                logging.info(f"外部キー制約エラーを検出。change_historyのcase_idをNULLに設定して再試行します")
+
+                # PostgreSQLでcase_idをNULLに設定できるか確認
+                # まず、case_idカラムがnullableかどうかを確認
+                try:
+                    # SQLを直接実行してcase_idをNULLに設定
+                    from sqlalchemy import text
+                    db.execute(
+                        text("UPDATE change_history SET case_id = NULL WHERE case_id = :case_id"),
+                        {"case_id": case.id}
+                    )
+                    db.commit()
+
+                    # 再度削除を試みる
+                    db.delete(case)
+                    db.commit()
+                    logging.info(f"案件削除成功（case_idをNULLに設定後）: case_id={case.id}")
+                except Exception as update_error:
+                    # case_idがnullable=Falseの場合、NULLに設定できない
+                    db.rollback()
+                    raise delete_error  # 元のエラーを再発生
+            else:
+                # その他のエラーの場合はそのまま再発生
+                raise
     except Exception as e:
         db.rollback()
         error_detail = str(e)
