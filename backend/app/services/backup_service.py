@@ -227,12 +227,12 @@ def restore_backup(
         backup_path = BACKUP_DIR / backup_path_str
     else:
         backup_path = Path(backup_path_str)
-    
+
     # さらに、backupsディレクトリ内のファイル名のみが指定されている場合
     if not backup_path.exists() and not os.path.isabs(backup_path_str):
         # ファイル名のみの場合
         backup_path = BACKUP_DIR / os.path.basename(backup_path_str)
-    
+
     if not backup_path.exists():
         raise FileNotFoundError(f"バックアップファイルが見つかりません: {backup_path} (元のパス: {backup_record.backup_path})")
 
