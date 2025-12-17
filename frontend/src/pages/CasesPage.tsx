@@ -166,16 +166,48 @@ export const CasesPage: React.FC = () => {
 
   /**
    * 日付値をYYYY-MM-DD形式に正規化
+   * HTML5 date input用に、常にYYYY-MM-DD形式を返す
+   * 不正な形式（6桁の年など）は空文字列を返す
    */
   const normalizeDateValue = (value: string): string => {
-    if (!value) return '';
-    // YYYY-MM-DD形式に変換（既に正しい形式の場合はそのまま）
-    const dateMatch = value.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
+    if (!value || typeof value !== 'string') return '';
+    
+    // 既に正確なYYYY-MM-DD形式（10文字）の場合はそのまま返す
+    const validDateFormat = /^\d{4}-\d{2}-\d{2}$/;
+    if (validDateFormat.test(value.trim())) {
+      return value.trim().substring(0, 10);
+    }
+    
+    // YYYY/MM/DD形式からYYYY-MM-DDに変換
+    const dateMatch = value.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
     if (dateMatch) {
       const [, year, month, day] = dateMatch;
-      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      // 年が4桁でない場合は無効（6桁の年などを防ぐ）
+      if (year.length !== 4) return '';
+      
+      const yearNum = parseInt(year, 10);
+      const monthNum = parseInt(month, 10);
+      const dayNum = parseInt(day, 10);
+      
+      // 有効な日付範囲かチェック
+      if (isNaN(yearNum) || isNaN(monthNum) || isNaN(dayNum)) return '';
+      if (yearNum < 1900 || yearNum > 2100) return '';
+      if (monthNum < 1 || monthNum > 12) return '';
+      if (dayNum < 1 || dayNum > 31) return '';
+      
+      // Dateオブジェクトで有効性を確認
+      const date = new Date(yearNum, monthNum - 1, dayNum);
+      if (
+        date.getFullYear() === yearNum &&
+        date.getMonth() === monthNum - 1 &&
+        date.getDate() === dayNum
+      ) {
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      }
     }
-    return value;
+    
+    // 無効な形式の場合は空文字列を返す
+    return '';
   };
 
   /**
