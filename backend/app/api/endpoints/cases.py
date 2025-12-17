@@ -220,7 +220,7 @@ async def create_case(
 
     # 案件データを取得
     case_data = case_in.model_dump()
-    
+
     # 案件番号の処理
     if case_in.case_number:
         # 案件番号が指定されている場合、重複確認
@@ -494,7 +494,7 @@ async def delete_case(
             # 削除履歴の記録に失敗しても案件削除は続行（警告のみ）
 
     # 案件を削除
-    # SQLiteでは外部キー制約がデフォルトで無効のため、変更履歴は残る
+    # PostgreSQLでは外部キー制約が有効のため、削除前にchange_historyのcase_idをNULLに設定
     import logging
     import traceback
     from ...core.config import settings
@@ -516,9 +516,15 @@ async def delete_case(
         ).count()
         logging.info(f"関連するドキュメント数: {document_count}")
 
+        # PostgreSQL用: 削除前にchange_historyのcase_idをNULLに設定（外部キー制約エラーを回避）
+        # これにより、案件削除後も変更履歴が残る
+        db.query(ChangeHistoryModel).filter(
+            ChangeHistoryModel.case_id == case.id
+        ).update({ChangeHistoryModel.case_id: None})
+        
         # 案件を削除（リレーションシップは自動的に処理される）
         # documentsはcascade="all, delete-orphan"で自動削除される
-        # change_historiesはcascadeがないため残る
+        # change_historiesのcase_idは既にNULLに設定済み
         db.delete(case)
         db.commit()
         logging.info(f"案件削除成功: case_id={case.id}, 削除履歴は既に記録済み")
