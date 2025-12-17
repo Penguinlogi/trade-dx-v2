@@ -262,6 +262,7 @@ export const ProductsPage: React.FC = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ backgroundColor: '#f5f5f5', borderBottom: '2px solid #ddd' }}>
+                  <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600 }}>ID</th>
                   <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600 }}>商品コード</th>
                   <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600 }}>商品名</th>
                   <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600 }}>商品名（英語）</th>
@@ -284,6 +285,11 @@ export const ProductsPage: React.FC = () => {
                       e.currentTarget.style.backgroundColor = 'transparent';
                     }}
                   >
+                    <td style={{ padding: '12px' }}>
+                      <Typography variant="body2" fontWeight={600} color="primary">
+                        {product.id}
+                      </Typography>
+                    </td>
                     <td style={{ padding: '12px' }}>
                       <Typography variant="body2" fontWeight={500}>
                         {product.product_code}

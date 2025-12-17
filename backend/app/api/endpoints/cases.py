@@ -205,7 +205,7 @@ async def create_case(
     # 顧客の存在確認
     import logging
     logging.info(f"案件作成: customer_id={case_in.customer_id} で顧客を検索中")
-    
+
     customer = db.query(CustomerModel).filter(CustomerModel.id == case_in.customer_id).first()
     if not customer:
         # デバッグ用：存在する顧客IDの一覧を取得
@@ -216,7 +216,7 @@ async def create_case(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"指定された顧客が見つかりません（顧客ID: {case_in.customer_id}）"
         )
-    
+
     logging.info(f"顧客が見つかりました: customer_id={customer.id}, customer_name={customer.customer_name}")
 
     # 商品の存在確認
