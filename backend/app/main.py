@@ -1,15 +1,25 @@
 """
 FastAPI メインアプリケーション
 """
-from fastapi import FastAPI
+import logging
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from .core.config import settings
 from .core.database import engine, Base
 from .api.endpoints import auth, cases, case_numbers, customers, products, analytics, documents, change_history, backups, websocket
 from scripts.seed_data import main as init_db
 
+# ロギング設定
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # データベーステーブルの作成
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+    logger.info("データベーステーブルの作成が完了しました")
+except Exception as e:
+    logger.error(f"データベーステーブルの作成に失敗しました: {str(e)}")
 
 # FastAPIアプリケーションの作成
 app = FastAPI(
@@ -67,6 +77,17 @@ async def health_check():
         "app_name": settings.APP_NAME,
         "version": settings.APP_VERSION
     }
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """
+    グローバル例外ハンドラー
+    """
+    logger.error(f"未処理のエラーが発生しました: {str(exc)}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "内部サーバーエラーが発生しました"}
+    )
     
 if __name__ == "__main__":
     import uvicorn
