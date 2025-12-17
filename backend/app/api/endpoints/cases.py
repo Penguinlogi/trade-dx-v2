@@ -2,6 +2,7 @@
 案件APIエンドポイント
 """
 from typing import Any, Optional
+from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_, and_
@@ -35,6 +36,8 @@ async def get_cases(
     trade_type: Optional[str] = Query(None, description="区分フィルタ"),
     status: Optional[str] = Query(None, description="ステータスフィルタ"),
     pic: Optional[str] = Query(None, description="担当者フィルタ"),
+    shipment_date_from: Optional[date] = Query(None, description="船積予定日（開始）"),
+    shipment_date_to: Optional[date] = Query(None, description="船積予定日（終了）"),
     sort_by: Optional[str] = Query("created_at", description="ソート項目"),
     sort_order: Optional[str] = Query("desc", description="ソート順（asc/desc）"),
 ) -> Any:
@@ -50,6 +53,8 @@ async def get_cases(
         trade_type: 区分フィルタ
         status: ステータスフィルタ
         pic: 担当者フィルタ
+        shipment_date_from: 船積予定日（開始）
+        shipment_date_to: 船積予定日（終了）
         sort_by: ソート項目
         sort_order: ソート順
 
@@ -83,6 +88,12 @@ async def get_cases(
 
     if pic:
         filters.append(CaseModel.pic.ilike(f"%{pic}%"))
+
+    # 船積予定日のフィルタリング
+    if shipment_date_from:
+        filters.append(CaseModel.shipment_date >= shipment_date_from)
+    if shipment_date_to:
+        filters.append(CaseModel.shipment_date <= shipment_date_to)
 
     if filters:
         query = query.filter(and_(*filters))

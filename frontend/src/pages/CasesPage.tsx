@@ -165,9 +165,27 @@ export const CasesPage: React.FC = () => {
   };
 
   /**
+   * 日付値をYYYY-MM-DD形式に正規化
+   */
+  const normalizeDateValue = (value: string): string => {
+    if (!value) return '';
+    // YYYY-MM-DD形式に変換（既に正しい形式の場合はそのまま）
+    const dateMatch = value.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
+    if (dateMatch) {
+      const [, year, month, day] = dateMatch;
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+    return value;
+  };
+
+  /**
    * フィルターの更新
    */
   const handleFilterChange = (field: keyof CaseSearchParams, value: any) => {
+    // 日付フィールドの場合は正規化
+    if (field === 'shipment_date_from' || field === 'shipment_date_to') {
+      value = normalizeDateValue(value);
+    }
     setSearchParams((prev) => ({
       ...prev,
       [field]: value || undefined,
@@ -365,7 +383,7 @@ export const CasesPage: React.FC = () => {
                   type="date"
                   fullWidth
                   label="船積予定日（開始）"
-                  value={searchParams.shipment_date_from || ''}
+                  value={normalizeDateValue(searchParams.shipment_date_from || '')}
                   onChange={(e) => handleFilterChange('shipment_date_from', e.target.value)}
                   InputLabelProps={{ shrink: true }}
                 />
@@ -375,7 +393,7 @@ export const CasesPage: React.FC = () => {
                   type="date"
                   fullWidth
                   label="船積予定日（終了）"
-                  value={searchParams.shipment_date_to || ''}
+                  value={normalizeDateValue(searchParams.shipment_date_to || '')}
                   onChange={(e) => handleFilterChange('shipment_date_to', e.target.value)}
                   InputLabelProps={{ shrink: true }}
                 />
