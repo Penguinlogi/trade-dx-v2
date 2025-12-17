@@ -556,7 +556,7 @@ async def delete_case(
             if "foreign key" in error_str.lower() or "FOREIGN KEY" in error_str or "constraint" in error_str.lower():
                 db.rollback()
                 logging.warning(f"外部キー制約エラーを検出。change_historyレコードを削除して再試行します: case_id={case.id}")
-                
+
                 # change_historyのレコードを削除（履歴は失われるが、削除は可能）
                 try:
                     deleted_count = db.query(ChangeHistoryModel).filter(
@@ -564,7 +564,7 @@ async def delete_case(
                     ).delete()
                     db.commit()
                     logging.info(f"change_historyレコードを削除しました: case_id={case.id}, 削除件数={deleted_count}")
-                    
+
                     # 再度削除を試みる
                     db.delete(case)
                     db.commit()
@@ -572,30 +572,6 @@ async def delete_case(
                 except Exception as retry_error:
                     db.rollback()
                     logging.error(f"change_historyレコード削除後の再試行に失敗しました: {str(retry_error)}")
-                    raise delete_error  # 元のエラーを再発生
-            else:
-                # その他のエラーの場合はそのまま再発生
-                raise
-                logging.info(f"外部キー制約エラーを検出。change_historyのcase_idをNULLに設定して再試行します")
-
-                try:
-                    # 外部キー制約を一時的に無効化してcase_idをNULLに設定
-                    # PostgreSQLでは、外部キー制約を無効化できないため、直接UPDATEを試みる
-                    db.execute(
-                        text("UPDATE change_history SET case_id = NULL WHERE case_id = :case_id"),
-                        {"case_id": case.id}
-                    )
-                    db.commit()
-
-                    # 再度削除を試みる
-                    db.delete(case)
-                    db.commit()
-                    logging.info(f"案件削除成功（case_idをNULLに設定後）: case_id={case.id}")
-                except Exception as update_error:
-                    # case_idがnullable=Falseの場合、NULLに設定できない
-                    db.rollback()
-                    error_detail = str(update_error)
-                    logging.error(f"case_idをNULLに設定できませんでした: {error_detail}")
                     raise delete_error  # 元のエラーを再発生
             else:
                 # その他のエラーの場合はそのまま再発生
