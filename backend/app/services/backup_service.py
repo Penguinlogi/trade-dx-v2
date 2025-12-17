@@ -14,7 +14,8 @@ from ..models.backup import Backup as BackupModel
 from ..core.config import settings
 
 
-BACKUP_DIR = Path("backups")
+# バックアップディレクトリ（絶対パスを使用）
+BACKUP_DIR = Path(os.path.abspath("backups"))
 BACKUP_DIR.mkdir(exist_ok=True)
 
 
@@ -219,9 +220,21 @@ def restore_backup(
     if not backup_record:
         raise ValueError(f"バックアップID {backup_id} が見つかりません")
 
-    backup_path = Path(backup_record.backup_path)
+    # バックアップファイルパスを解決（相対パスの場合は絶対パスに変換）
+    backup_path_str = backup_record.backup_path
+    if not os.path.isabs(backup_path_str):
+        # 相対パスの場合、BACKUP_DIRからの相対パスとして解決
+        backup_path = BACKUP_DIR / backup_path_str
+    else:
+        backup_path = Path(backup_path_str)
+    
+    # さらに、backupsディレクトリ内のファイル名のみが指定されている場合
+    if not backup_path.exists() and not os.path.isabs(backup_path_str):
+        # ファイル名のみの場合
+        backup_path = BACKUP_DIR / os.path.basename(backup_path_str)
+    
     if not backup_path.exists():
-        raise FileNotFoundError(f"バックアップファイルが見つかりません: {backup_path}")
+        raise FileNotFoundError(f"バックアップファイルが見つかりません: {backup_path} (元のパス: {backup_record.backup_path})")
 
     # 復元処理開始：ステータスを「in_progress」に更新
     original_status = backup_record.status
@@ -236,17 +249,21 @@ def restore_backup(
         if is_postgresql:
             # PostgreSQLの場合：JSONファイルからデータを復元
             # まず現在のデータをバックアップ（安全のため）
+            safety_backup_record = None
             try:
-                safety_backup_record, _ = create_backup(
+                safety_backup_record, safety_backup_path = create_backup(
                     db=db,
                     backup_name=f"safety_backup_before_restore_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
                     backup_type="safety",
                     created_by=None
                 )
+                import logging
+                logging.info(f"安全バックアップを作成しました: {safety_backup_path}")
             except Exception as e:
                 # 安全バックアップの作成に失敗しても続行（警告のみ）
                 import logging
                 logging.warning(f"安全バックアップの作成に失敗しました: {str(e)}")
+                # 安全バックアップが作成されなかった場合でも復元は続行
 
             # JSONファイルを読み込んで復元
             with open(backup_path, 'r', encoding='utf-8') as f:
@@ -326,7 +343,7 @@ def import_postgresql_data(db: Session, backup_data: dict) -> None:
             if table_name in table_mapping:
                 model = table_mapping[table_name]
                 db.query(model).delete()
-        
+
         # usersテーブルは最後に削除
         if 'users' in table_mapping:
             db.query(table_mapping['users']).delete()
@@ -403,7 +420,7 @@ def import_postgresql_data(db: Session, backup_data: dict) -> None:
                     db.add(record)
 
         db.commit()
-        
+
         # PostgreSQLの場合、シーケンスを更新
         db_url = settings.DATABASE_URL
         if "postgresql" in db_url.lower():
@@ -419,7 +436,7 @@ def import_postgresql_data(db: Session, backup_data: dict) -> None:
                     ("change_history", "change_history_id_seq"),
                     ("documents", "documents_id_seq"),
                 ]
-                
+
                 for table_name, sequence_name in sequence_updates:
                     if table_name in backup_data.get('tables', {}):
                         table_data = backup_data['tables'][table_name]
@@ -435,7 +452,7 @@ def import_postgresql_data(db: Session, backup_data: dict) -> None:
                                     # シーケンスが存在しない場合はスキップ
                                     import logging
                                     logging.warning(f"シーケンス {sequence_name} の更新に失敗しました: {str(seq_error)}")
-                
+
                 db.commit()
             except Exception as seq_update_error:
                 import logging
