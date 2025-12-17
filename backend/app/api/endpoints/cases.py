@@ -464,27 +464,37 @@ async def delete_case(
 
     # 既に削除履歴が存在するかチェック（重複記録を防ぐ）
     from ...models.change_history import ChangeHistory as ChangeHistoryModel
+    import logging
+    
+    # 削除対象案件の情報をログに記録（デバッグ用）
+    logging.info(f"案件削除処理開始: case_id={case.id}, case_number={case.case_number}")
+    
     existing_delete_history = db.query(ChangeHistoryModel).filter(
         ChangeHistoryModel.case_id == case.id,
         ChangeHistoryModel.change_type == "DELETE"
     ).first()
 
     # 削除前に変更履歴を記録（まだ記録されていない場合のみ）
-    import logging
     if not existing_delete_history:
         try:
-            # 削除履歴を記録
-            record_change_history(
+            # 削除履歴を記録（case_idとcase_number_snapshotを明示的に設定）
+            logging.info(f"削除履歴を記録します: case_id={case.id}, case_number={case.case_number}")
+            delete_history = record_change_history(
                 db=db,
-                case_id=case.id,
+                case_id=case.id,  # 削除前なのでcase_idは存在する
                 change_type="DELETE",
                 changed_by=current_user.id,
                 old_case=case,
-                case_number_snapshot=case.case_number
+                case_number_snapshot=case.case_number  # 案件番号を明示的に保存
             )
             # 削除履歴を確実にコミット（案件削除とは別トランザクション）
             db.commit()
-            logging.info(f"削除履歴を記録しました: case_id={case.id}, case_number={case.case_number}")
+            # 記録された削除履歴の内容を確認（デバッグ用）
+            db.refresh(delete_history)
+            recorded_case_number = None
+            if delete_history.changes_json and isinstance(delete_history.changes_json, dict):
+                recorded_case_number = delete_history.changes_json.get("_case_number_snapshot")
+            logging.info(f"削除履歴を記録しました: history_id={delete_history.id}, case_id={delete_history.case_id}, recorded_case_number={recorded_case_number}")
         except Exception as e:
             # 変更履歴記録エラーはロールバックして警告を記録
             db.rollback()
@@ -525,14 +535,16 @@ async def delete_case(
 
         # まず、change_historyのcase_idをNULLに設定を試みる（スキーマが更新されている場合）
         # マイグレーションが実行されていない場合でも、エラーハンドリングで対応
+        # 重要: 削除履歴（DELETEタイプ）はcase_idをNULLにしない（履歴表示のため）
         try:
-            # 直接UPDATEを試みる（スキーマが更新されている場合、これは成功する）
+            # 削除履歴以外のchange_historyレコードのcase_idをNULLに設定
+            # 削除履歴はcase_idを保持して、案件番号スナップショットで識別する
             update_result = db.execute(
-                text("UPDATE change_history SET case_id = NULL WHERE case_id = :case_id"),
+                text("UPDATE change_history SET case_id = NULL WHERE case_id = :case_id AND change_type != 'DELETE'"),
                 {"case_id": case.id}
             )
             db.commit()
-            logging.info(f"change_historyのcase_idをNULLに設定しました: case_id={case.id}, 更新件数={update_result.rowcount}")
+            logging.info(f"change_historyのcase_idをNULLに設定しました（削除履歴を除く）: case_id={case.id}, 更新件数={update_result.rowcount}")
         except Exception as update_error:
             # case_idがnullable=Falseの場合、NULLに設定できない
             # この場合、削除処理でエラーハンドリングを行う
@@ -558,12 +570,15 @@ async def delete_case(
                 logging.warning(f"外部キー制約エラーを検出。change_historyレコードを削除して再試行します: case_id={case.id}")
 
                 # change_historyのレコードを削除（履歴は失われるが、削除は可能）
+                # ただし、削除履歴（DELETEタイプ）は保持する（履歴表示のため）
                 try:
+                    # 削除履歴以外のchange_historyレコードを削除
                     deleted_count = db.query(ChangeHistoryModel).filter(
-                        ChangeHistoryModel.case_id == case.id
+                        ChangeHistoryModel.case_id == case.id,
+                        ChangeHistoryModel.change_type != "DELETE"
                     ).delete()
                     db.commit()
-                    logging.info(f"change_historyレコードを削除しました: case_id={case.id}, 削除件数={deleted_count}")
+                    logging.info(f"change_historyレコードを削除しました（削除履歴を除く）: case_id={case.id}, 削除件数={deleted_count}")
 
                     # 再度削除を試みる
                     db.delete(case)
